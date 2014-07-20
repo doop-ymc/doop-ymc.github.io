@@ -4,15 +4,19 @@ permalink: /:year/:month/:day/:title.html
 name: "doop-ymc"
 
 author: "ymc"
-atom-baseurl: "http://lhzhang.com"
+atom-baseurl: "http://yaowhat.com"
 
 navigations:
   - title: 文章
+    class: fa fa-list-ul
     href: /archive.html
   - title: 分类
+    class: fa fa-tags
     href: /tags.html
   - title: 关于
+    class: fa fa-user
     href: /about.html
   - title: 其它
+    class: fa fa-film
     href: http://yaowhat.com
 
