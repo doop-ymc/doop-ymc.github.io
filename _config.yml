@@ -1,0 +1,18 @@
+markdown: rdiscount
+pygments: false
+permalink: /:year/:month/:day/:title.html
+name: "doop-ymc"
+
+author: "ymc"
+atom-baseurl: "http://lhzhang.com"
+
+navigations:
+  - title: 文章
+    href: /archive.html
+  - title: 分类
+    href: /tags.html
+  - title: 关于
+    href: /about.html
+  - title: 其它
+    href: http://yaowhat.com
+
