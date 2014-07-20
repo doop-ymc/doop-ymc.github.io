@@ -81,7 +81,7 @@ header {
   width: 780px;
   margin: 0 auto;
   text-align: justify;
-  margin: 3em auto; 
+  margin: 2.2em auto; 
 }
 header:after {
     content: '';

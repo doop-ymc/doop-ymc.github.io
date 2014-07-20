@@ -1,0 +1,212 @@
+---
+title: git 学习笔记
+layout: post
+category: 技术
+tag:
+    - 技术
+    - git
+---
+
+git 是一个方便的版本管理工具
+
+###git 简介
+git中的文件存在三种状态：已修改(modified)、已暂存(staged)、已提交(commited)  
+git中文件流转的三个工作区分别为：工作目录、暂存区域、本地仓库；当然，此外，还有远程仓库  
+具体的文件流转可如下图示:
+
+[![git](/media/files/tech/git.png)]()
+###git 配置
+安装git
+
+    sudo yum install git-core
+
+配置git
+
+    git config --global user.name "yourusername"
+    git config --global user.email "yourusername@163.com"
+
+ssh-key生成：
+
+    ssh-keygen -C "yourusername@163.com" -t rsa
+
+
+###git的初始化
+
+a.本地初始化  
+step 1:新建项目的空文件夹  
+
+    mkdir my_project
+
+step 2:进入项目文件夹  
+
+    cd my_project
+
+step 3:git初始化
+
+    git init
+
+b.从github的项目初始化  
+step 1:同上  
+step 2:从github项目clone  
+
+    git clone https://github.com/yourusername/my_project.git
+    or git clone git@github.com:yourusername/my_project.git
+
+
+###本地变化相关操作
+
+a.查看本地状态变化情况  
+
+    git status
+
+b.查看各文件的具体变化内容  
+
+    git diff            比较的是工作区与stage的区别
+    git diff --cached   比较的是stage与版本库的区别
+    git diff HEAD       比较工作区与版本库的区别
+    git difftool ...    是以图形化的形式查看区别对比
+
+c.添加所有变化至本地缓存  
+
+    git add .
+
+d.添加指定文件的变化至本地缓存  
+
+    git add -p <file>
+
+e.将缓存中的内容提交到本地分支  
+
+    git commit -m "your_comment"
+    git commit -a -m "your_comment" 添加至stage的同时提交至版本库
+
+f.查看上次提交后缓存的变化.PS:当stage为空时感觉与git status效果较为一致
+
+    git commit
+
+###提交历史查看
+
+a.查看所有的提交历史
+
+    git log
+
+b.查看指定文件的修改提交历史
+
+    git log -p <file>
+    git log --graph --pretty=online --abbrev-commit
+
+c.命令历史
+
+    git reflog
+
+d.查看谁对某个文件的修改情况
+    
+    git blame <file>
+
+###分支与tag相关
+a.列出当前本机上的所有分支
+
+    git branch
+
+b.切换当前的分支
+
+    git checkout <branch>
+
+c.创建新的分支
+
+    git branch <new-branch>
+
+下面的在创建的同时还会完成分支的切换
+
+    git checkout -b <new-branch>
+
+d.删除本地分支
+
+    git branch -d <branch>
+
+e.对本次提交添加tag
+
+    git tag <tag-name>
+	git tag -d <tag-name>
+
+f.合并分支,将指定分支合并到当前的分支上
+
+	git merge <branch>
+
+g.合并分支，并且修改分支的历史版本信息
+
+	git rebase <branch>
+	git rebase --abort 放弃一次rebase
+	git rebase --continue 解决冲突后继续一次rebase操作
+
+注意rebase过程中发生冲突时解决后应使用git add添加后再使用
+
+	git rebase --continue
+
+###更新及发布
+a.查看远程的所有配置情况
+
+	git remote -v
+
+b.为远程添加新的分支
+
+	git remote add <remote> <url>
+    ie: git remote add origin git@github.com:yourusername/my_project.git
+
+c.同步远程分支信息,不会进行合并
+
+	git fetch <remote>:local:name
+    ie:git fetch origin master:tmp
+	git diff tmp
+	git merge tmp
+
+上面例子的含义为：将远程的origin下的master分支下载到本地的tmp上，然后检查  
+tmp分支与当前分支的差异，最后与当前分支合并  
+d.从运程获取分支并merge到本地当前分支上
+
+	git pull <remote> <branch>
+
+实际上相当于git fetch 与git merge的合并  
+f.将本地分支推送到远程分支上
+
+	git push <remote> <branch>
+
+g.删除远程的一个分支
+
+	git push <remote>:<branch>
+
+h.发布tags
+
+	git push --tags
+
+###撤消修改相关
+a.放弃工作区中的所有修改内容
+
+	git reset --hard HEAD
+
+b.放弃指定文件的本地修改
+
+	git checkout HEAD <file>
+	git checkout -- <file>
+
+c.撤消某次提交，并将这次撤消作为新的提交，版本增加
+
+	git revert <commit>
+
+d.回退到某次提交
+
+	git reset --hard <commit>  丢弃更改至指定的提交，stage,workarea与head均会改变
+	git reset --soft <commit>  回滚至指定的提交，修改保存于工作区,stage,workarea均不改变
+	git reset --mixed <commit> 默认，不改变workarea仅改变stage，head的内容
+	git checkout -- <file>     只修改workaarea,会优先回退stage的内容至工作区，若stage为空，则回退版本库中的内容 
+
+e.删除版本库中的文件
+
+	git rm <file>
+
+f.暂存改动
+
+	git stash    
+	git stash可以把当前的改动（stage和unstage，但不包括untrack的文件）暂存。
+    然后通过gitstash list查看。并通过git stash apply重新取出来。但apply之前要保证worktree是干净的。
+
+

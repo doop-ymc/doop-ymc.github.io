@@ -31,11 +31,11 @@ layout: default
   <ul class="listing main-listing">
     <li class="listing-seperator">最近更新</i>
   {% capture year %}{{ site.time | date:"%Y"}}{% endcapture %}
-  {% for post in site.posts offset:1 %}
-    {% capture y %}{{ post.date | date:"%Y"}}{% endcapture %}
+  {% for post in site.posts offset:0 limit:10 %}
+   <!-- {% capture y %}{{ post.date | date:"%Y"}}{% endcapture %}
     {% if year != y %}
     {% break %}
-    {% endif %}
+    {% endif %}-->
     <li class="listing-item">
       <time datetime="{{ post.date | date:"%Y-%m-%d" }}">{{ post.date | date:"%Y-%m-%d" }}</time>
       <a href="{{ post.url }}" title="{{ post.title }}">{{ post.title }}</a>

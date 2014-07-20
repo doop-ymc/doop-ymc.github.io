@@ -1,4 +1,6 @@
 markdown: rdiscount
+# pygments: false
+# markdown: redcarpet
 pygments: false
 permalink: /:year/:month/:day/:title.html
 name: "doop-ymc"
