@@ -2,6 +2,10 @@
 # pygments: false
 markdown: redcarpet
 highlighter: pygments
+redcarpet:
+  extensions: [fenced_code_blocks]
+  render_options:
+
 permalink: /:year/:month/:day/:title.html
 name: "doop-ymc"
 
