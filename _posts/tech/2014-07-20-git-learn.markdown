@@ -209,4 +209,17 @@ f.暂存改动
 	git stash可以把当前的改动（stage和unstage，但不包括untrack的文件）暂存。
     然后通过gitstash list查看。并通过git stash apply重新取出来。但apply之前要保证worktree是干净的。
 
+```c
+    #include <stdio.h>
+    #include <stdlib.h>
+
+    int main(int argc, char *argv[]) 
+    {
+        int i = 10;
+        char hello[10] = "hello world!";
+
+        printf("%d %s\n", i, hello);
+        return 0;
+    }
+```
 

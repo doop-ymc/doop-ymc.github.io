@@ -10,5 +10,5 @@ tag:
 [![header](/media/files/header/header.jpg)]()
 ---
 <div class="header-text">
-    “我是小丑，却愿意试，保护你到世界末日”
+    “我像小丑，却愿意试，保护你到世界末日。”
 </div>
