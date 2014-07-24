@@ -224,6 +224,9 @@ article .divider:before  {
 article .divider:after  {
     margin-left: 1%; 
 }
+/*p {
+      text-indent: 2em;
+}*/
 
 footer  {
   width: 780px;

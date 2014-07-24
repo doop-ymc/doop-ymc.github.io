@@ -33,6 +33,7 @@ ssh-key生成：
 ###git的初始化
 
 a.本地初始化  
+
 step 1:新建项目的空文件夹  
 
     mkdir my_project
@@ -46,6 +47,7 @@ step 3:git初始化
     git init
 
 b.从github的项目初始化  
+
 step 1:同上  
 step 2:从github项目clone  
 
@@ -149,17 +151,21 @@ a.查看远程的所有配置情况
 
 b.为远程添加新的分支
 
+```sh
 	git remote add <remote> <url>
     ie: git remote add origin git@github.com:yourusername/my_project.git
+```
 
 c.同步远程分支信息,不会进行合并
 
+```sh
 	git fetch <remote>:local:name
     ie:git fetch origin master:tmp
 	git diff tmp
 	git merge tmp
+```
 
-上面例子的含义为：将远程的origin下的master分支下载到本地的tmp上，然后检查  
+上面例子的含义为：将远程的origin下的master分支下载到本地的tmp上，然后检查
 tmp分支与当前分支的差异，最后与当前分支合并  
 d.从运程获取分支并merge到本地当前分支上
 

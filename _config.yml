@@ -1,7 +1,9 @@
-# markdown: rdiscount
+markdown: rdiscount
 # pygments: false
-markdown: redcarpet
-highlighter: pygments
+# markdown: redcarpet
+highlighter: null
+# redcarpet:
+  # extensions: [smart, fenced_code, gh_blockcode] 
 permalink: /:year/:month/:day/:title.html
 name: "doop-ymc"
 
@@ -20,5 +22,5 @@ navigations:
     href: /about.html
   - title: 其它
     class: fa fa-film
-    href: http://yaowhat.com
+    href: http:/yaowhat.com
 
