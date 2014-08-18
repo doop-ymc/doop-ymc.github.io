@@ -1,0 +1,191 @@
+---
+title: bash耗时命令进度条
+layout: post
+category: Linux
+tag:
+    - bash
+---
+
+在日常的shell脚本的编写过程中，完成有需求在耗时命令执行时，同时显示状态，以标志程序是在运行的
+而不是死了，对于知道多久完成的命令，或者说能够停下来监控进度的命令的状态显示是非常简单的；对于 
+能够通过添加 -v 标志来进行进度显示的方式更不在本文考虑的范围内。
+
+为了能够在阻塞式的命令执行时，能够输出程序在活动在状态标示，实际上是需要乃至bash的多进程执行程序的。
+下面分几步来讨论实现bash耗时进度条的方法
+
+###小棍进度条
+
+用于标示进度的方法有多种，对于不知道多久执行完成的进度标示用小棍的是最佳的，下面是实际小棍进度输出的
+脚本。
+
+```sh
+    #输出进度条, 小棍型
+    procing() {
+        while [ 1 ]
+        do
+            for j in '-' '\\' '|' '/'
+            do
+                #保存当前光标所在位置
+                tput sc                         
+                echo -ne  "$j"
+                sleep 1
+                #恢复光标到最后保存的位置
+                tput rc                         
+          done
+        done 
+    }
+```
+
+上面的程序已经可以输出一个不断变化的小棍。
+
+###主命令运行时显示进度条
+
+要在主任务命令运行时同时能够显示小棍进度条，则必定需要多个任务同时执行，而对于bash程序来说，最简单的多任务同时
+运行的方式，就是将任务放到后台执行即在命令结尾加上`&`符。则对于以下的一个任务加上进度条小棍后如下：
+
+```sh
+    
+    #   解压数据
+    ungz_data() {
+        local proc="$1";
+        begin "$proc";
+
+        #后台执行解压任务
+        gunzip -f -d "${data_name}.gz" &
+        #后台执行打印进度条小棍任务
+        procing &
+        #等待上面的程序执行完成
+        wait
+
+        ret="$?"
+        judge "$proc"
+    }
+
+```
+
+上面的程序已经能够在后台执行解压任务的同时在前台console打印不断变化的小棍。然而这里有一个
+问题，这里相当于有两个程序同时在后台执行，而对于下面的`wait`命令则会等到后台执行的程序都执行
+完成时，才会继续向下执行, 然而对于`procing`函数是始终循环执行的，没有退出设定，是不合理的。
+因此在`procing`程序中需要有退出操作，否则其一直执行，`wait`就一直等待，整个程序就阻塞住了。
+
+`procing`需要退出有两种方式，一种是`procing`自己退出，另一种是外部通知其退出。   
+对于第一种，通常是知道上一个阻塞命令的运行结束条件的，也就是能够主动知道上一个阻塞命令什么时候会结束，从
+则主动结束自己不再持续打印不断变化的小棍，以标示进度。显然在我们这里讨论的场景是不适用的。  
+对于第二种，即在上一个阻塞命令结束时，主动去通知`procing`程序结束。下面进行详细讨论。
+
+###导步通知结束
+
+要通过异步的去通知结束，那么首先要知道第一个阻塞命令什么时候运行完了，这时就需要用到`wait`的更多特性，先看一下
+`wait`命令在man 手册中的说明：
+
+    wait [n ...]
+        Wait  for  each specified process and return its termination status.  Each n may be a process ID or a job specification; if a job
+        spec is given, all processes in that job’s pipeline are waited for.  If n is not given, all currently active child processes  are
+        waited  for,  and the return status is zero.  If n specifies a non-existent process or job, the return status is 127.  Otherwise,
+        the return status is the exit status of the last process or job waited for.
+
+可以看出实际上wait是可以等待指定进程的结束的。那么这就好办了，就可以先等待第一个阻塞命令的结束，然后在去通知显示动态变化
+小棍进程的结束。通知进程结束的方式，通常全用`kill -9 pid`就可。那么改进后的程序可变为如下：
+
+```sh
+
+    #   解压数据
+    ungz_data() {
+        local proc="$1";
+        begin "$proc";
+
+        gunzip -f -d "${data_name}.gz" &
+        waiting "$!" 
+
+        ret="$?"
+        judge "$proc"
+
+    }
+    #   等待执行完成
+    waiting() {
+        local pid="$1"
+        procing &
+        local tmppid="$!"
+        wait $pid
+        kill -9 $tmppid >/dev/null 1>&2
+    }
+```
+
+这个时候已经能够在第一个阻塞命令运行结束时，通知显示变化小棍进程的结束，基本实现了
+在运行耗时较长的命令时，能够同时显示状态在改变的进度标识的功能。不过还有一些需要优化的地方。
+
+###优化
+
+利用上面的程序有时在整个脚本运行结束时，会出现类似下面的一个报错：
+
+    ****.sh pid 已杀死  一些shell脚本的源码...
+    ....
+    ...
+    ...
+
+经过分析，应该是暴力使用kill -9 结束打印变化小棍进程导致的，kill -9 时没有合理的结束进程关系
+导致整个脚本执行结束时，仍然去等待中间后台去执行打印变化小棍的进程，而为些进程已经被kill 掉
+了，从而输出一些不能被屏蔽掉的错误信息。
+
+如何解决呢？
+
+那就是不能使用kill -9 的方式来暴力结束进程，需要使用exit主动退出进程，以正确结束进程关系。还是回到了
+开始的问题如何在状态进程中适时的退出。这时想起了另外一个命令`trap`。`trap`可用于捕获信号，然后执行指定
+的shell程序。那么就可以在第一个阻塞进程结束时，给状态进程发送一个信号，然后在状态进程中去捕获，捕获到对应
+信号后就调用 exit 正常退出，就应该不会报上面的错误。
+
+经过尝试, 推论成立，最后的优化后程序如下示：
+
+```sh
+    #   等待执行完成
+    waiting() {
+        local pid="$1"
+        msg "$2... ..." '' -n
+        procing &
+        local tmppid="$!"
+        wait $pid
+        #恢复光标到最后保存的位置
+        tput rc                                 
+        msg "done" $boldblue
+        kill -6 $tmppid >/dev/null 1>&2
+    }
+
+    #   输出进度条, 小棍型
+    procing() {
+        trap 'exit 0;' 6
+        while [ 1 ]
+        do
+            for j in '-' '\\' '|' '/'
+            do
+                #保存当前光标所在位置
+                tput sc                         
+                echo -ne  "$j"
+                sleep 1
+                #恢复光标到最后保存的位置
+                tput rc                         
+          done
+        done 
+    }
+    #   解压数据
+    ungz_data() {
+        local proc="$1";
+        begin "$proc";
+
+        gunzip -f -d "${data_name}.gz" &
+        waiting "$!" "正在解压"
+
+        ret="$?"
+        judge "$proc"
+
+    }
+
+```
+
+最后的优化后的效果，基本已是想要的效果了，且个人觉得实现也较为完善。
+###总结
+
+*   要对shell命令多熟悉，多看man手册
+*   要一步步细致分析问题
+*   精益求精
+
+
