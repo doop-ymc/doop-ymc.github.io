@@ -51,6 +51,16 @@ a:hover, header #header h1 a:hover, article .title a:hover, article .meta .tags 
     color: #dd1144; 
 }
 
+pre{
+  background-color: #f8f8f8;
+  padding: 0 1em;
+  border: 1px dashed #eee !important;
+  border-color: #e0e0e0 !important;
+  font-size: 13px;
+  line-height: 1.6;
+  display: block;
+  overflow: auto; 
+}
 blockquote, pre code {
   background-color: #f8f8f8;
   padding: 0 1em;

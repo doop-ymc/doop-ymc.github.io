@@ -37,9 +37,9 @@ tag:
 一条snake, 及其后的另一条D/2-path构成, 假设得到的中间的snake为middle snake。  
 到这儿，根据上一条定理，新算法的思想差不多就出来了，如下：
 
-    由于从正向及反向查找D-path实际上在理论上是等价的，这样的在查找M,N编辑图上的D-path，就可以转化为同时从正
-    向及反 向同时计算D/2-path的过程，不过这两个D/2-path需要最后同时终止于一条相同的k-line, 在这边k-line上会根
-    据判定重叠条件得到一条middle snake。接下来就是将问题二分化，以middle snake为切分，将问题分解为继续
+    由于从正向及反向查找D-path实际上在理论上是等价的，这样的在查找M,N编辑图上的D-path，就可以转化为同时
+    从正向及反 向同时计算D/2-path的过程，不过这两个D/2-path需要最后同时终止于一条相同的k-line, 在这边k-lines
+    上会根据判定重叠条件得到一条middle snake。接下来就是将问题二分化，以middle snake为切分，将问题分解为继续
     求两个D/2-path的middle snake 的过程, 最终所有得到的middle snake即最后的M,N编辑图中D-path的track。
 
 上面的算法思想，说得比较清楚了，关键是重叠的判定 。由于正向的k-lines是以0-line为中心的，而反向的k-lines是以∆ =N-M为中心的。

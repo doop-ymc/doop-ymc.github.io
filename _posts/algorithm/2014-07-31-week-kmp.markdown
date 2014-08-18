@@ -114,8 +114,8 @@ tag:
 
 next数组的计算过程利用了递归原则，如下：
 
-    假设对于值k，已有p0 p1, ..., pk-1 = pj-k pj-k+1, ..., pj-1，也即串p[0,j-1]的最长相同前后缀的长度为k,这样按next[j]的规则（为
-    前面的串的value值）,next[j] = k。下面从next[j]求next[j+1],分情况讨论：
+    假设对于值k，已有p0 p1, ..., pk-1 = pj-k pj-k+1, ..., pj-1，也即串p[0,j-1]的最长相同前后缀的长度为k,这样按next[j]
+    的规则（为 前面的串的value值）,next[j] = k。下面从next[j]求next[j+1],分情况讨论：
     （1）pk = pj, 那么就有p0 p1, ..., pk = pj-k pj-k+1, ..., pj，这样同理得到next[j+1] = k + 1 = next[j] + 1;
     （2）pk ≠ pj, 那么就不能简单的由next[j]得到next[j+1]了，next[j+1]的计算过程就需要以其它方法了，不过由于存在n
         ext[j]=k,也即p0 p1, ..., pk-1 = pj-k pj-k+1, ..., pj-1,那么对于i,i>=0且i<k-1, 则必定会有
