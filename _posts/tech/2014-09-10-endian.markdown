@@ -1,0 +1,83 @@
+---
+title: php的ntohl、ntohs字节序
+layout: post
+category: php
+tag:
+    - php
+    - 网络
+---
+
+好吧，在PHP进行程序处理时也遇到了字节序的问题，先介绍下字节序。
+
+###字节序
+
+不同的CPU有不同的字节序类型这些字节序是指整数在内存中保存的顺序这个叫做主机序  
+最常见的有两种:  
+1． Little endian：将低序字节存储在起始地址  
+2． Big endian：将高序字节存储在起始地址  
+
+如‘你’为\u4f60, 则在内存中其存储形式为下示：
+
+<pre>
+    内存地址 0000 0001 0002    ...  
+          LE  60   4f
+          BE  4f   60
+</pre>
+
+网络字节顺序是指TCP/IP中规定好的一种数据表示格式，它与具体的CPU类型、操作系统等无关，从而可以保证数据在不同
+主机之间传输时能够被正确解释。网络字节顺序采用big endian排序方式。为了进行转换在C语言中通常有以下的四个函数：
+
+    htons 把unsigned short类型从主机序转换到网络序
+    htonl 把unsigned long类型从主机序转换到网络序
+    ntohs 把unsigned short类型从网络序转换到主机序
+    ntohl 把unsigned long类型从网络序转换到主机序
+
+在使用little endian的系统中 这些函数会把字节序进行转换,在使用big endian类型的系统中 这些函数会定义成空。
+
+###转换函数实现
+PHP中并没提供htons,htonl功能的函数，在进行网络通信时，可以通过，以下的两个函数完成转换：
+
+```php
+    string pack ( string $format [, mixed $args [, mixed $... ]]  )
+    array unpack ( string $format , string $data  )
+
+    Code     Description
+    a     NUL-padded string
+    A     SPACE-padded string
+    h     Hex string, low nibble first
+    H     Hex string, high nibble first
+    c     signed char
+    C     unsigned char
+    s     signed short (always 16 bit, machine byte order)
+    S     unsigned short (always 16 bit, machine byte order)
+    n     unsigned short (always 16 bit, big endian byte order)
+    v     unsigned short (always 16 bit, little endian byte order)
+    i     signed integer (machine dependent size and byte order)
+    I     unsigned integer (machine dependent size and byte order)
+    l     signed long (always 32 bit, machine byte order)
+    L     unsigned long (always 32 bit, machine byte order)
+    N     unsigned long (always 32 bit, big endian byte order)
+    V     unsigned long (always 32 bit, little endian byte order)
+    f     float (machine dependent size and representation)
+    d     double (machine dependent size and representation)
+    x     NUL byte
+    X     Back up one byte
+    Z     NUL-padded string (new in PHP 5.5)
+    @     NUL-fill to absolute position
+```
+有了以上的两个函数，那么php版本的htons, ntohs函数，就可以实现为如下的形式：
+
+```php
+    function ntohl($str)
+    {
+        $endian = unpack(‘I’, pack(‘N’, $str));
+        return $endian[1];
+    }
+    function ntohs($str)
+    {
+        $endian = unpack(‘n’, pack(‘L’, $str));
+        return $endian[1];
+    }
+```
+
+

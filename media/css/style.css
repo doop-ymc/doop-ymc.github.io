@@ -61,6 +61,28 @@ pre{
   display: block;
   overflow: auto; 
 }
+
+.slab{
+  background-color: #f8f8f8;
+  padding: 0 1em;
+  border: 1px dashed #eee !important;
+  border-color: #e0e0e0 !important;
+  font-size: 13px;
+  line-height: 1.3;
+  display: block;
+  width: 860px;
+  margin-left: -40px;
+  overflow:hidden;
+}
+
+.prepic{
+    line-height:1.3;
+    overflow:hidden;
+}
+
+pre p{
+    text-align: center;
+}
 blockquote, pre code {
   background-color: #f8f8f8;
   padding: 0 1em;

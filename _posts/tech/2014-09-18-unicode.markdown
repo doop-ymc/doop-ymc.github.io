@@ -1,0 +1,124 @@
+---
+title: Unicode私有区字符的生成
+layout: post
+category: 字符编码
+tag:
+    - php
+    - unicode
+---
+
+因为各种需求，需要对html文本中同一标签内的内容当作一个整体来处理，而处理过程的逻辑是针对字符的，
+若要将部分内容当作整体处理，那么就需要定义复杂的规则。如当需要比较两个网页的内容时，当需要将如h2标签
+及其内的内容当作一个整体来处理时，就需要制定规则，以使得在处理时碰到h2时，能够将其作为整体对待。
+
+另一种思想是将这个整体用某种方式进行编码，将其当作其它普通单元，让其融入整过处理逻辑，以减少处理时
+的复杂性。如这里是针对字符的处理，那最好的方法是将其用单个字符来完成编码，当然编码后的字符是不能与普通
+字符重复的，这样就需要研究下UNICODE的编码，查看那块编码范围是不会有可见字符或者（可打印字符及控制字符）。
+
+###Unicode介绍
+
+Unicode是Unicode Standard（Unicode标准）的简写，所以Unicode即是指Unicode标准。Unicode为每一个字符均
+能提供一数字为其索引（不论什么平台，什么语言）。这个数字通常被称为码点。U+[XX]XXXX是码点的表示形式，
+X代表一个十六制数字，可以有4-6位，不足4位是前补0补足4位，超过则按是几位就是几位。以下是码点的一些
+具体示例：U+0048，U+4F60，U+1D11E。范围目前是U+0000~U+10FFFF，理论大小为10FFFF+1=11000016。另为了更好分
+类管理如此庞大的码点数，把每65536个码点作为一个平面，总共17个平面。如下图示：
+[![panel](/media/files/tech/unicode-charset2.png)]()
+关于这17个平面，第一个平面称为**BMP（Basic Multilingual Plane 基本多语言平面）**，后续的16个平面称为增补平面
+**SP（Supplementary Planes）**; 下面是一个UnicodeBMP字符集鸟瞰图的一个缩略版本，完整的见
+[这里](http://unifoundry.com/pub/unifont-7.0.03/unifont-7.0.03.bmp)。
+[![unifont](/media/files/tech/05005212_WqJ0.png)]()
+256×256=65536的表格，横向纵向都是从00~FF。在以上的鸟瞰图中有一块空白的区域，如下图示。被称作**代理区（Surrogate Area）**
+如下图示，是从D8~DF的，其中D800–DBFF属于**高代理区（High Surrogate Area）**，后面的蓝色部分DC00–DFFF属于
+**低代理区（Low Surrogate Area）**。从E0开始到F8的则是属于**私有区（private）**，可以在这里定义自己专用的字符。
+实际上我们在进行实体的编码时，也是利用的这部分的编码区。
+[![unifont](/media/files/tech/05005221_ENrq.png)]()
+**UTF即是Unicode转换格式**（Unicode (or UCS) Transformation Format）, 码点与其它几种UTF形式的转换如下图示意。
+[![unifont](/media/files/tech/05005222_QtHf.jpg)]()
+**UTF32**
+
+UTF-32采用的定长四字节则是32位，所以它表示所有的码点不但毫无压力，反而绰绰有余，所以只要把码点的表示形式以前
+补0的形式补够32位即可。这种表示唯一的缺点是占用空间太大。
+
+**UTF-8**
+
+UTF-8是变长的编码方案，可以有1，2，3，4四种字节组合。在前面的定长与变长篇章我们提到UTF-8采用了高位保留方式来
+区别不同变长，如下：
+[![unifont](/media/files/tech/05005223_yPgY.png)]()
+
+UTF8编码，码点与编码的对应：
+
+    1. 一字节留给了ASCII，码点U+0000~U+007F（127）使用一字节。
+    2. 二字节有效编码位只有5+6=11位，最多只有211=2048个编码空间，所以数量众多的汉字是无法容身于此
+        的了。码点U+0080~U+07FF（2047）使用二字节。
+    3. 三字节模式可看到光是保留位就达到4+2+2=8位，相当一字节，所以只有两字节16位有效编码位，它的容
+        量实际也只有65536。码点U+0800~U+FFFF使用三字节编码。我们前面说到，一些汉字字典收录的汉字达
+        到了惊人的10万级别。基本上，常用的汉字都落在了这三字节的空间里，这就是我们常说的汉字在UTF-8
+        里用三字节表示。当然了，这么说并不严谨，如果这10万的汉字都被收录进来的话，那些偏门的汉字自
+        然只能被挤到四字节空间上去了。
+    4. 四字节的可以看到它的有效位是3+6+6+6=21位，前面说到最大的码点10FFFF也是21位，U+FFFF以上的增补
+        平面的字符都在这里来表示。
+
+**UTF-16**
+
+UTF-16是一种变长的2或4字节编码模式。对于BMP内的字符使用2字节编码，其它的则使用4字节组成所谓的代理对来编码。
+上面的UNICODE知识参见[深入图解字符集与字符集编码](http://my.oschina.net/goldenshaw/blog/310331)。
+
+###私有区字符生成
+
+从上面Unicode的介绍知，可用来对实体进行编码的BMP编码区为E000~F8FF区域，即私有区。那么就可以将每个实体通过映射
+的方式，将其与此区域的字符形成对应关系。具体的代码如下示：
+
+```
+    /**
+     * 获取UNICODE私有区编码
+     * @return string
+     */
+    public static function getUniPUA() {
+        $begin = hexdec("e000");
+        $dec = $begin + self::$_index;
+        self::$_index += 1;
+        $change = unpack('n', pack('L', $dec));
+        $hex = dechex($change[1]);
+        return self::unicode2Decode("\u$hex", 'UTF-8', true, '\u', '');
+    }
+    /**
+     * 汉字转Unicode编码
+     * @param string $str       原始汉字的字符串
+     * @param string $encoding  原始汉字的编码
+     * @param boot   $ishex     是否为十六进制表示（支持十六进制和十进制）
+     * @param string $prefix    编码后的前缀
+     * @param string $postfix   编码后的后缀
+     */
+    public static function unicode2Encode($str, $encoding = 'UTF-8', $ishex = false, $prefix = '&#', $postfix = ';') {
+        $str = iconv($encoding, 'UCS-2', $str);
+        $arrstr = str_split($str, 2);
+        $unistr = '';
+        for($i = 0, $len = count($arrstr); $i < $len; $i++) {
+            $dec = $ishex ? bin2hex($arrstr[$i]) : hexdec(bin2hex($arrstr[$i]));
+            $unistr .= $prefix . $dec . $postfix;
+        }
+        return $unistr;
+    }
+     
+    /**
+     * Unicode编码转汉字
+     * @param string $str       Unicode编码的字符串
+     * @param string $decoding  原始汉字的编码
+     * @param boot   $ishex     是否为十六进制表示（支持十六进制和十进制）
+     * @param string $prefix    编码后的前缀
+     * @param string $postfix   编码后的后缀
+     */
+    public static function unicode2Decode($unistr, $encoding = 'UTF-8', $ishex = false, $prefix = '&#', $postfix = ';') {
+        $arruni = explode($prefix, $unistr);
+        $unistr = '';
+        for($i = 1, $len = count($arruni); $i < $len; $i++) {
+            if (strlen($postfix) > 0) {
+                $arruni[$i] = substr($arruni[$i], 0, strlen($arruni[$i]) - strlen($postfix));
+            }
+            $temp = $ishex ? hexdec($arruni[$i]) : intval($arruni[$i]);
+            $unistr .= ($temp < 256) ? chr(0) . chr($temp) : chr($temp / 256) . chr($temp % 256);
+        }
+        return iconv('UCS-2', $encoding, $unistr);
+    }
+
+```
