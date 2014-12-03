@@ -1,8 +1,9 @@
-#markdown: rdiscount
+markdown: rdiscount
 # pygments: false
-markdown: redcarpet
-redcarpet:
-   extensions: [smart, fenced_code, gh_blockcode, tables] 
+#markdown: redcarpet
+highlighter: null
+#redcarpet:
+ #  extensions: [smart, fenced_code, gh_blockcode, tables] 
 permalink: /:year/:month/:day/:title.html
 name: "doop-ymc"
 
