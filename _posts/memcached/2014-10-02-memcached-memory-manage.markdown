@@ -135,7 +135,7 @@ memcached内存模型中有以下几个概念：
     typedef struct _stritem {
         struct _stritem *next;      /* 指向此item在LRU list中的下一个item */
         struct _stritem *prev;      /* 指向此item在LRU list中的上一个*/
-        struct _stritem *h_next;    /* 指向些item在Hashtable中的下一个*/
+        struct _stritem *h_next;    /* 指向此item在Hashtable中的下一个*/
         rel_time_t      time;       /* 最近的访问时间*/
         rel_time_t      exptime;    /* 过期时间*/
         int             nbytes;     /* 数据的长度*/

@@ -1,0 +1,103 @@
+---
+title: varnish系列一——varnish的工作机制
+layout: post
+category: varnish
+tag:
+    - varnish
+---
+
+什么是varnish, 和通常的缓存加速工具有何不同，在[varnish](https://www.varnish-software.com/resources/book)文档中有如下描述：
+
+    1. Varnish is a reverse HTTP proxy, sometimes referred to as a HTTP accelerator or a web accelerator.
+    2. Varnish stores files or fragments of files in memory, allowing them to be served quickly.
+    3. Varnish is essentially a key/value store, that usually uses the URL as a key.
+    4. Varnish is designed for modern hardware, modern operating systems and modern work loads.
+
+下面从varnish的工作流程，及取数据流程两个方面对varnish的总体的工作机制进行介绍。
+
+###varnish的工作流程
+
+varnish主要有两个进程，下面是varnish的基本的进程结构
+[![varnisha](/media/files/tech/varnisha.jpg)]()
+如上图示，varnish主要存在两个进程，manage进程，及child进程，其中：
+
+    manage进程：更新配置，vcl文件编译，varnish监控，初始化varnish,及提供varnish管理接口。
+    child进程：主要进行请求任务的处理，接受请求等。
+
+相当于child进程实际是提供varnish主体功能的进程，其线程结构如下图示：
+[![varnishb](/media/files/tech/varnishb.jpg)]()
+child进程中各线程的处理的任务如下示：
+
+    accept线程: 监听端口，接受连接；接受连接后组成session结构，查看是否有空闲线程，若有则分配给其处
+                理，若无，则检查等待队列verflow的大小，若过大，则抛弃请求，否则加入overflow队列。
+    work线程： 从overflow队列中获取任务, 走varnish状态机流程处理任务，完成后通过pipe的线程通信，传递
+                给epoll线程，等待下一个事件触发。
+    epoll线程：将事件发送时对应的session, 放入overflow队列，以供work线程从中取出继续处理。当然，在等待
+                事件发送时，会检查该session是否过期。
+    expire线程：对以二叉树形式组织的缓存对象，进行过期检查，对过期的对象进行处理（更新或者弃用）
+
+varnish中主要是在work线程中完成对请求的处理，而处理请求的逻辑主要是依据varnish vcl配置文件来决定对不同的请求
+采取的处理方式。vcl配置文件主机涉及vcl的状态转换相关的配置，下面主要讲vcl处理流程。
+
+###vcl的处理流程
+
+vcl的处理流程，主要是由varnish的状态机决定，可以通过vcl配置文件来对varnish状态机各个步骤所做的操作进行配置。
+vcl的状态机如下图示：
+[![varnishc](/media/files/tech/varnishc.jpg)]()
+上面的状态图，主要对varnish处理http请求时各个步骤及决策方式进行了描述，下面对其中的各个状态进行介绍。
+
+####vcl_recv
+vcl_recv是http请求到达后进入的第一个状态，在这个状态中，可以对请求进行以下的一些处理：
+
+    1. 修改client请求，以减少缓存决策时的差异性。
+    2. 根据client请求，决定缓存策略。
+    3. 重定向请求
+    4. 决定处理请求的backend（即后端webserver）
+
+在vcl_recv可以进入vcl_pass, vcl_pipe,vcl_lookup,vcl_error.
+
+####vcl_pipe
+若连接存活期间其请求被vcl_recv传递至vcl_pipe,那么这请求后的所有请求，将后直接经vcl_recv到达backend, varnish不再查找，
+及存储及请求的对象，就如同client与backend直接通信一样, 不会记录任何通信的日志。
+
+####vcl_pass
+进入vcl_pass的请求，请求会直接发送至backend, 但不会缓存, 可进入restart, 会增加restart计数。
+
+####vcl_hash
+根据请求的特征，构建hash值，通常是以host+url的形式建立Hash值，可进入vcl_hit及vcl_miss.
+
+###vcl_hit
+可进入vcl_pass及vcl_deliver,vcl_restart
+
+####vcl_miss
+可进入vcl_pass及vcl_fetch,vcl_restart
+
+####vcl_fetch 
+将请求传递至backend, 决定是是否缓存，可进入  
+hit_for_pass: 仅vcl_fetch可进入，与pass功能类似，不过其会利用beresp建立一个hitforpass对象，以防止同一对象被缓存，在hitforpass对象存在
+              期间，同一请求的结果都不会被缓存，请求会直接进入pass。    
+deliver: 缓存取到的对象，并发送至服务端   
+也可进入restart, 增加restart计数，当restart计数大于max_restarts时会报错。
+
+####vcl_deliver
+在缓存数据将要发送到客户端时调用
+
+####vcl_error
+出错时调用,以上的各状态通常情况下都可进入vcl_error
+
+对于以上状态的转换，具体的转换原因，也可如下图示：
+[![varnishd](/media/files/tech/varnishd.jpg)]()
+
+###vcl中的变量
+VCL 内置的公共变量可以用在不同的 VCL 函数中，下面根据使用的不同阶段进行介绍
+
+**表 1. 请求到达时可用公共变量**
+[![varnishe](/media/files/tech/varnishe.jpg)]()
+**表 2. 向后端主机请求时可用公共变量**
+[![varnishf](/media/files/tech/varnishf.jpg)]()
+**表 3. 后端主机获取内容时可使用公共变量**
+[![varnishg](/media/files/tech/varnishg.jpg)]()
+**表 4. 对客户端相应时可使用公共变量**
+[![varnishh](/media/files/tech/varnishh.jpg)]()
+
+
