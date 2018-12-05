@@ -29,7 +29,7 @@ layout: default
   </ul>
   <div class="divider"></div>
   <ul class="listing main-listing">
-    <li class="listing-seperator">最近更新</i>
+    <li class="listing-seperator">最近更新</li>
   {% capture year %}{{ site.time | date:"%Y"}}{% endcapture %}
   {% for post in site.posts offset:0 limit:5 %}
    <!-- {% capture y %}{{ post.date | date:"%Y"}}{% endcapture %}
