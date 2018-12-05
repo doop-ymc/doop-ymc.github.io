@@ -1,5 +1,5 @@
 ---
-title: 我是一个小丑
+title: 小丑
 layout: post
 category: headers
 tag:
@@ -10,5 +10,5 @@ tag:
 [![header](/media/files/header/header.jpg)]()
 ---
 <div class="header-text">
-    “我像小丑，却愿意试，保护你到世界末日。”
+    “学无止境”
 </div>
